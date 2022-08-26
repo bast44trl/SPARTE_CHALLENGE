@@ -1,8 +1,9 @@
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, Output, Pipe } from '@angular/core';
 import { BarSeriesOption, EChartsOption, LineSeriesOption } from 'echarts';
 import moment from 'moment';
 
 import { Asset } from '../../models/asset.model';
+import { Environment } from '../../models/environment.model';
 import { ChallengeService } from '../../services/challenge.service';
 
 moment.locale('fr');
@@ -123,7 +124,15 @@ export class ChallengeComponent implements AfterViewInit {
    * @returns {PieData[]} sous la forme [{name, value}]
    */
   get systemByEnvData(): PieData[] {
-    return [];
+    const environnements = this.challengeService.getEnvironments;
+    const systemes = this.challengeService.getSystems;
+    const sysByEnv =  environnements.map(env => {
+      return {
+        name: env.name,
+        value: systemes.filter(sys => sys.environment_id === env.id).length,
+      }
+    });
+    return sysByEnv;
   }
 
   /**
@@ -131,7 +140,10 @@ export class ChallengeComponent implements AfterViewInit {
    * @returns {PieData[]} sous la forme [{name, value}]
    */
   get assetBySystemData(): PieData[] {
-    return [];
+    const assets = this.challengeService.getAssets;
+    const systemes = this.challengeService.getSystems.filter(sys => this.systemsIdsForAssetPieChart.includes(sys.id));
+    const assetsBySys = systemes.map(sys => {return {name: sys.name, value: assets.filter(ass => ass.system_ids.includes(sys.id)).length}});
+    return assetsBySys;
   }
 
   /**
@@ -146,7 +158,14 @@ export class ChallengeComponent implements AfterViewInit {
    * tip: utiliser moment(hour).format('LL') pour récupérer le jour pour une heure donnée
    */
   get xAxisByDays(): string[] {
-    return [];
+    const timeframeDays = this.challengeService.timeframe.map(time => 
+      moment(time).format('LL')).reduce((acc, cur) => 
+      {
+        if (acc.indexOf(cur) === -1) {
+          acc.push(cur);
+        }
+        return acc}, []);
+    return timeframeDays;
   }
 
   /**
@@ -172,7 +191,7 @@ export class ChallengeComponent implements AfterViewInit {
       .map(asset => ({
         name: asset.label,
         type: 'line',
-        data: []
+        data: [...asset.data.filter(dataKey => dataKey.name === 'temperature')[0].values]
       }));
   }
 
@@ -183,6 +202,8 @@ export class ChallengeComponent implements AfterViewInit {
    */
   getSerieForMachine(machine: Asset): BarSeriesOption {
     const machineOutputData = new Map<string, number>();
+    const machineOutput = machine.data.filter((machineData => machineData.name === 'output'));
+    machineOutput[0].values.map(outputValue => machineOutputData.set(outputValue.timestamp.toString(), outputValue.value));
     return {
       name: machine.label,
       type: 'bar',
