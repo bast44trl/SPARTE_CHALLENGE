@@ -14,7 +14,7 @@ Angular 14+ : `npm i @angular/cli -g`
 `npm run start`
 
 ## Instructions challenge
-Créer une branche git avec votre nom avant de commencer à coder.
+Dupliquer (fork) le projet avant de commencer à coder.
 Quand le test est terminé, faire une pull request sur la branche master.
 
 Les énoncés des exercices sont sur http://localhost:4200/home
